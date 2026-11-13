@@ -40,7 +40,6 @@ This repository is a proposal for code review, not a ready-to-install mod.
 ## Validation and limitations
 
 - Joint compilation with Better Phone UI, Stay Dead and local dependencies passed using REDscript 0.5.32.
-- In-game behavior has not yet been verified.
 - Compilation without Stay Dead has not been separately tested.
 - Compatibility with other versions has not been verified.
 
