@@ -1,0 +1,69 @@
+diff --git a/staydead-work/BetterPhoneUI-1.1.1-original.Data.reds b/StayDead-BetterPhoneUI-1.1.1/r6/scripts/BetterPhoneUI/Data.reds
+index 7b5f452..bee6ba2 100644
+--- a/staydead-work/BetterPhoneUI-1.1.1-original.Data.reds
++++ b/StayDead-BetterPhoneUI-1.1.1/r6/scripts/BetterPhoneUI/Data.reds
+@@ -21,6 +21,9 @@
+ 
+ module BetterPhoneUI
+ 
++@if(ModuleExists("NightCityNemesis"))
++import NightCityNemesis.NcnPhone
++
+ // The filter buttons, in their order on screen: a value is the button's index.
+ enum BPUThreadFilter {
+   All = 0,
+@@ -169,6 +172,26 @@ public class BPUContactItem {
+ }
+ 
+ public abstract class BPUData {
++  @if(ModuleExists("NightCityNemesis"))
++  private static func Sender(game: GameInstance, contact: wref<JournalContact>, fallback: String) -> String {
++    if NcnPhone.IsOurs(contact.GetId()) {
++      let name = NcnPhone.SenderForContact(game, contact.GetId());
++      if StrLen(name) > 0 { return name; }
++    }
++    return fallback;
++  }
++
++  @if(!ModuleExists("NightCityNemesis"))
++  private static func Sender(game: GameInstance, contact: wref<JournalContact>, fallback: String) -> String = fallback;
++
++  @if(ModuleExists("NightCityNemesis"))
++  private static func LiveBody(msg: wref<JournalPhoneMessage>) -> String {
++    return NcnPhone.IsOurs(msg.GetId()) ? NcnPhone.TextFor(GetGameInstance(), msg.GetId()) : "";
++  }
++
++  @if(!ModuleExists("NightCityNemesis"))
++  private static func LiveBody(msg: wref<JournalPhoneMessage>) -> String = "";
++
+   // The contacts vanilla's Contacts tab lists (MessengerUtils.GetCallableAndNonEmptyContacts:
+   // callable, or with messages), by name.
+   public static func Contacts(game: GameInstance, threads: array<ref<BPUThread>>) -> array<ref<BPUContact>> {
+@@ -185,7 +208,7 @@ public abstract class BPUData {
+         contact.contact = journalContact;
+         contact.hash = journal.GetEntryHash(journalContact);
+         contact.id = journalContact.GetId();
+-        contact.name = GetLocalizedText(journalContact.GetLocalizedName(journal));
++        contact.name = BPUData.Sender(game, journalContact, GetLocalizedText(journalContact.GetLocalizedName(journal)));
+         contact.avatarID = journalContact.GetAvatarID(journal);
+         contact.callable = journalContact.IsCallable(journal);
+         contact.fixer = BPUFixers.IsFixer(contact.id);
+@@ -548,7 +571,7 @@ public abstract class BPUData {
+     thread.contactHash = journal.GetEntryHash(contact);
+     thread.threadHash = journal.GetEntryHash(entry);
+     thread.contactId = contact.GetId();
+-    thread.contactName = GetLocalizedText(contact.GetLocalizedName(journal));
++    thread.contactName = BPUData.Sender(GetGameInstance(), contact, GetLocalizedText(contact.GetLocalizedName(journal)));
+     thread.avatarID = contact.GetAvatarID(journal);
+     thread.callable = contact.IsCallable(journal);
+     thread.fixer = BPUFixers.IsFixer(thread.contactId);
+@@ -795,7 +818,8 @@ public abstract class BPUData {
+   public static func TextOf(entry: wref<JournalEntry>) -> String {
+     let phoneMessage = entry as JournalPhoneMessage;
+     if IsDefined(phoneMessage) {
+-      return GetLocalizedText(phoneMessage.GetText());
++      let live = BPUData.LiveBody(phoneMessage);
++      return StrLen(live) > 0 ? live : GetLocalizedText(phoneMessage.GetText());
+     }
+     let choiceEntry = entry as JournalPhoneChoiceEntry;
+     if IsDefined(choiceEntry) {
